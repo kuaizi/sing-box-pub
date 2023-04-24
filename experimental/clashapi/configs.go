@@ -2,18 +2,20 @@ package clashapi
 
 import (
 	"net/http"
+	"os"
 	"strings"
-
-	"github.com/sagernet/sing-box/log"
+	"syscall"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
+	"github.com/sagernet/sing-box/log"
 )
 
 func configRouter(server *Server, logFactory log.Factory, logger log.Logger) http.Handler {
 	r := chi.NewRouter()
 	r.Get("/", getConfigs(server, logFactory))
-	r.Put("/", updateConfigs)
+	// r.Put("/", updateConfigs)
+	r.Put("/", reload(server))
 	r.Patch("/", patchConfigs(server, logger))
 	return r
 }
@@ -68,6 +70,22 @@ func patchConfigs(server *Server, logger log.Logger) func(w http.ResponseWriter,
 	}
 }
 
+/**
 func updateConfigs(w http.ResponseWriter, r *http.Request) {
 	render.NoContent(w, r)
+}
+*/
+
+func reload(server *Server) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			server.logger.Warn("reloading...")
+			pid := os.Getpid()
+			err := syscall.Kill(pid, syscall.SIGTERM)
+			if err != nil {
+				server.logger.Error("failed to reload: ", err)
+			}
+		}()
+		render.NoContent(w, r)
+	}
 }
