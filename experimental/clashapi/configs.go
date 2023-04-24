@@ -81,7 +81,7 @@ func reload(server *Server) func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			server.logger.Warn("reloading...")
 			pid := os.Getpid()
-			err := syscall.Kill(pid, syscall.SIGTERM)
+			err := syscall.Kill(pid, syscall.SIGHUP)
 			if err != nil {
 				server.logger.Error("failed to reload: ", err)
 			}
