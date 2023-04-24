@@ -50,6 +50,8 @@ with this application without prior consent.
             "url": "https://www.google.com", // 订阅链接，必填，仅支持Clash订阅链接
             "cache_file": "/tmp/proxy-provider-x.cache", // 缓存文件，选填，强烈建议填写，可以加快启动速度
             "force_update": "4h", // 强制更新间隔，选填，若当前缓存文件已经超过该时间，将会强制更新
+            "ip": "1.1.1.1", // 请求的IP，选填，若不填写，将会使用DNS字段中的DNS服务器
+            "http3": true, // 是否使用HTTP/3，选填，实验性，可能会有奇怪的问题，对于节点订阅地址使用了CloudFlare CDN（或者支持HTTP/3的服务器），可以尝试开启
             "dns": "tcp://223.5.5.5", // 请求的DNS服务器，选填，若不填写，将会选择默认DNS，支持(udp/tcp/dot/doh/doh3/doq)
             "filter": { // 过滤节点，选填
                 "rule": [
@@ -95,6 +97,16 @@ sing-box update-proxyprovider [-t 可指定proxy-provider tag, 支持多个tag]
 2. 根据订阅生成出站(outbound)配置文件
 
 sing-box show-proxyprovider [-t 可指定proxy-provider tag, 支持多个tag]
+
+3. DNS格式 （{}中内容可以省略）
+- udp://223.5.5.5{:53} （使用223.5.5.5，53端口 UDP DNS）
+- tcp://223.5.5.5{:53} （使用223.5.5.5，53端口 TCP DNS）
+- tls://8.8.8.8{:853} （使用8.8.8.8，853端口 TLS DNS）
+- https://1.1.1.1{:443}/dns-query （使用1.1.1.1，443端口 HTTPS DNS）
+- h3://1.1.1.1{:443}/dns-query （使用1.1.1.1，443端口 HTTPS DNS，使用（HTTP/3））
+- quic://94.140.14.140{:784} （使用94.140.14.140，784端口 QUIC DNS）
+
+* 不允许使用基于域名的DNS。使用基于域名的DNS服务器，依然需要使用基于IP的DNS服务器作为解析域名的DNS服务器
 ```
 
 #### 2. 内嵌Yacd-Meta面板 (with_clash_ui)
