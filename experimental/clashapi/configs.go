@@ -79,7 +79,7 @@ func updateConfigs(w http.ResponseWriter, r *http.Request) {
 func reload(server *Server) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
-			server.logger.Warn("reloading...")
+			server.logger.Warn("config file reloading...")
 			pid := os.Getpid()
 			err := syscall.Kill(pid, syscall.SIGHUP)
 			if err != nil {
