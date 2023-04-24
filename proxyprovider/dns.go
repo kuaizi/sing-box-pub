@@ -24,7 +24,7 @@ func (p *ProxyProvider) initDNS() error {
 	case strings.HasPrefix(p.options.DNS, "udp://"):
 		addr := strings.Replace(p.options.DNS, "udp://", "", 1)
 
-		ip, err := netip.ParseAddr(addr)
+		ip, err := netip.ParseAddr(strings.Trim(addr, "[]"))
 		if err == nil {
 			addr = net.JoinHostPort(ip.String(), "53")
 			dnsTransport, err := dns.NewUDPTransport("proxy-provider-dns", p.ctx, p.dialer, M.ParseSocksaddr(addr))
@@ -59,7 +59,7 @@ func (p *ProxyProvider) initDNS() error {
 	case strings.HasPrefix(p.options.DNS, "tcp://"):
 		addr := strings.Replace(p.options.DNS, "tcp://", "", 1)
 
-		ip, err := netip.ParseAddr(addr)
+		ip, err := netip.ParseAddr(strings.Trim(addr, "[]"))
 		if err == nil {
 			addr = net.JoinHostPort(ip.String(), "53")
 			dnsTransport, err := dns.NewTCPTransport("proxy-provider-dns", p.ctx, p.dialer, M.ParseSocksaddr(addr))
@@ -94,7 +94,7 @@ func (p *ProxyProvider) initDNS() error {
 	case strings.HasPrefix(p.options.DNS, "tls://"):
 		addr := strings.Replace(p.options.DNS, "tls://", "", 1)
 
-		ip, err := netip.ParseAddr(addr)
+		ip, err := netip.ParseAddr(strings.Trim(addr, "[]"))
 		if err == nil {
 			addr = net.JoinHostPort(ip.String(), "853")
 			dnsTransport, err := dns.NewTLSTransport("proxy-provider-dns", p.ctx, p.dialer, M.ParseSocksaddr(addr))
@@ -178,7 +178,7 @@ func (p *ProxyProvider) initDNS() error {
 	case strings.HasPrefix(p.options.DNS, "quic://"):
 		addr := strings.Replace(p.options.DNS, "quic://", "", 1)
 
-		ip, err := netip.ParseAddr(addr)
+		ip, err := netip.ParseAddr(strings.Trim(addr, "[]"))
 		if err == nil {
 			addr = net.JoinHostPort(ip.String(), "784")
 			dnsTransport, err := dnsQUIC.NewTransport("proxy-provider-dns", p.ctx, p.dialer, M.ParseSocksaddr(addr))
