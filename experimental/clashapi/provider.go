@@ -91,7 +91,7 @@ func healthCheckProvider(server *Server, router adapter.Router) func(w http.Resp
 			go func(out adapter.Outbound) {
 				defer wg.Done()
 				realTag := outbound.RealTag(out)
-				ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+				ctx, cancel := context.WithTimeout(server.ctx, time.Second*30)
 				defer cancel()
 				delay, err := urltest.URLTest(ctx, "", out)
 				if err != nil {
