@@ -116,7 +116,12 @@ func NewRouter(
 		defaultMark:           options.DefaultMark,
 		platformInterface:     platformInterface,
 	}
-	router.dnsClient = dns.NewClient(dnsOptions.DNSClientOptions.DisableCache, dnsOptions.DNSClientOptions.DisableExpire, router.dnsLogger)
+	router.dnsClient = dns.NewClient(dns.ClientOptions{
+		DisableCache:     dnsOptions.DNSClientOptions.DisableCache,
+		DisableExpire:    dnsOptions.DNSClientOptions.DisableExpire,
+		IndependentCache: dnsOptions.DNSClientOptions.IndependentCache,
+		Logger:           router.dnsLogger,
+	})
 	for i, ruleOptions := range options.Rules {
 		routeRule, err := NewRule(router, router.logger, ruleOptions)
 		if err != nil {
@@ -609,7 +614,8 @@ func (r *Router) RouteConnection(ctx context.Context, conn net.Conn, metadata ad
 	switch metadata.Destination.Fqdn {
 	case mux.Destination.Fqdn:
 		r.logger.InfoContext(ctx, "inbound multiplex connection")
-		return mux.NewConnection(ctx, r, r, r.logger, conn, metadata)
+		handler := adapter.NewUpstreamHandler(metadata, r.RouteConnection, r.RoutePacketConnection, r)
+		return mux.HandleConnection(ctx, handler, r.logger, conn, adapter.UpstreamMetadata(metadata))
 	case vmess.MuxDestination.Fqdn:
 		r.logger.InfoContext(ctx, "inbound legacy multiplex connection")
 		return vmess.HandleMuxConnection(ctx, conn, adapter.NewUpstreamHandler(metadata, r.RouteConnection, r.RoutePacketConnection, r))
@@ -998,9 +1004,22 @@ func (r *Router) notifyNetworkUpdate(int) error {
 		r.logger.Info("updated default interface ", r.interfaceMonitor.DefaultInterfaceName(netip.IPv4Unspecified()), ", index ", r.interfaceMonitor.DefaultInterfaceIndex(netip.IPv4Unspecified()))
 	}
 
-	if conntrack.Enabled {
-		conntrack.Close()
+	conntrack.Close()
+
+	for _, outbound := range r.outbounds {
+		listener, isListener := outbound.(adapter.InterfaceUpdateListener)
+		if isListener {
+			err := listener.InterfaceUpdated()
+			if err != nil {
+				return err
+			}
+		}
 	}
+	return nil
+}
+
+func (r *Router) ResetNetwork() error {
+	conntrack.Close()
 
 	for _, outbound := range r.outbounds {
 		listener, isListener := outbound.(adapter.InterfaceUpdateListener)

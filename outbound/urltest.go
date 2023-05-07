@@ -150,10 +150,9 @@ type URLTestGroup struct {
 	history   *urltest.HistoryStorage
 	checking  atomic.Bool
 
-	access sync.Mutex
-
 	fallback URLTestFallback
 
+	access sync.Mutex
 	ticker *time.Ticker
 	close  chan struct{}
 }
@@ -250,7 +249,7 @@ func (g *URLTestGroup) Fallback(used adapter.Outbound) []adapter.Outbound {
 			outbounds = append(outbounds, detour)
 		}
 	}
-	sort.Slice(outbounds, func(i, j int) bool {
+	sort.SliceStable(outbounds, func(i, j int) bool {
 		oi := outbounds[i]
 		oj := outbounds[j]
 		hi := g.history.LoadURLTestHistory(RealTag(oi))
