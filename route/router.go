@@ -26,9 +26,9 @@ import (
 	"github.com/sagernet/sing-box/option"
 	"github.com/sagernet/sing-box/outbound"
 	"github.com/sagernet/sing-box/transport/fakeip"
-	"github.com/sagernet/sing-dns"
-	"github.com/sagernet/sing-tun"
-	"github.com/sagernet/sing-vmess"
+	dns "github.com/sagernet/sing-dns"
+	tun "github.com/sagernet/sing-tun"
+	vmess "github.com/sagernet/sing-vmess"
 	"github.com/sagernet/sing/common"
 	"github.com/sagernet/sing/common/buf"
 	"github.com/sagernet/sing/common/bufio"
@@ -42,6 +42,8 @@ import (
 	"github.com/sagernet/sing/common/uot"
 	"github.com/sagernet/sing/service"
 	"github.com/sagernet/sing/service/pause"
+
+	"github.com/fsnotify/fsnotify"
 )
 
 var _ adapter.Router = (*Router)(nil)
@@ -67,6 +69,7 @@ type Router struct {
 	geoIPReader                        *geoip.Reader
 	geositeReader                      *geosite.Reader
 	geositeCache                       map[string]adapter.Rule
+	geoWatcher                         *fsnotify.Watcher
 	dnsClient                          *dns.Client
 	defaultDomainStrategy              dns.DomainStrategy
 	dnsRules                           []adapter.DNSRule
@@ -443,6 +446,12 @@ func (r *Router) Start() error {
 			return err
 		}
 	}
+	if r.needGeoIPDatabase || r.needGeositeDatabase {
+		err := r.startGeoWatcher()
+		if err != nil {
+			return err
+		}
+	}
 	if r.interfaceMonitor != nil {
 		err := r.interfaceMonitor.Start()
 		if err != nil {
@@ -534,7 +543,7 @@ func (r *Router) Close() error {
 			return E.Cause(err, "close dns transport[", i, "]")
 		})
 	}
-	if r.geositeReader != nil {
+	if r.geoIPReader != nil {
 		r.logger.Trace("closing geoip reader")
 		err = E.Append(err, common.Close(r.geoIPReader), func(err error) error {
 			return E.Cause(err, "close geoip reader")
@@ -568,6 +577,12 @@ func (r *Router) Close() error {
 		r.logger.Trace("closing fakeip store")
 		err = E.Append(err, r.fakeIPStore.Close(), func(err error) error {
 			return E.Cause(err, "close fakeip store")
+		})
+	}
+	if r.geoWatcher != nil {
+		r.logger.Trace("closing geo resource watcher")
+		err = E.Append(err, r.geoWatcher.Close(), func(err error) error {
+			return E.Cause(err, "close geo resource watcher")
 		})
 	}
 	return err
