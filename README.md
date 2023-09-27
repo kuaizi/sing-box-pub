@@ -1,3 +1,5 @@
+#  弃更提醒 本分支已弃更，请使用 ```dev-yaott``` 分支
+
 # sing-box
 
 The universal proxy platform.
